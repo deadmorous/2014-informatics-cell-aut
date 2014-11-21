@@ -1,6 +1,7 @@
 #include <QTextStream>
 #include <QVector>
 QTextStream cout(stdout);
+QTextStream cerr(stderr);
 
 class CellAut
 {
@@ -34,12 +35,12 @@ public:
     void init(int state = 1<<16)
     {
         m_state.fill(0);
-        int stateIndex = m_size/2 + 16;
-        while (state)
-        {
-            m_state[stateIndex--] = state & 1 ?   1 :   0;
-            state >>= 1;
-        }
+        int bits = 0;
+        for (int s=state; s; s>>=1)
+            ++bits;
+        int stateIndex = (m_size+bits)/2;
+        for (int s=state; s; s>>=1)
+            m_state[stateIndex--] = s & 1 ?   1 :   0;
     }
     void next()
     {
@@ -67,7 +68,21 @@ private:
 
 int main(int argc, char *argv[])
 {
-    CellAut ca;
-    ca.run(25);
+    // Parse command line parameters
+    if (argc != 5)
+    {
+        QString programName = QString(argv[0]).split(QRegExp("\\\\|/")).last();
+        cerr << "Usage: " << programName << " rule steps initstate size" << endl;
+        return -1;
+    }
+    int rule = atoi(argv[1]);
+    int steps = atoi(argv[2]);
+    int initstate = atoi(argv[3]);
+    int size = atoi(argv[4]);
+
+    // Run simulation
+    CellAut ca(rule, size);
+    ca.init(initstate);
+    ca.run(steps);
     return 0;
 }
